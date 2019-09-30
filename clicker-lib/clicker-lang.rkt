@@ -1,14 +1,17 @@
 #lang racket
 
-(provide start-clicker-forest
-         start-clicker-desert
-         start-clicker-snow
-         start-clicker-lava
-         start-clicker-pink
-         (all-from-out racket))
+(provide start-forest
+         start-desert
+         start-snow
+         start-lava
+         start-pink
+         
+         define-clicker-start-f
+         define-start-binder)
 
 (require game-engine
          game-engine-demos-common
+         syntax/parse/define
          (only-in adventure page)
          ratchet/util
          (for-syntax racket)
@@ -353,13 +356,18 @@
       (p)
       p))
 
-(define-syntax (app stx)
-  (syntax-case stx ()
-    [(_ f (args ...)) #'(f args ...)] 
+(define (start-clicker pointer-sprite collectible-sprites avoidable-sprites special-sprites #:bg-sprite [bg-sprite (crop 0 0 640 480 FOREST-BG)])
 
-    [(_ f arg) #'(f arg)] ) )
+  (define pointer
+    (apply make-pointer (flatten pointer-sprite)))
+  (define collectibles-list
+    (map (curry apply make-collectible) collectible-sprites ))
+  (define avoidables-list
+    (map (curry apply make-avoidable) avoidable-sprites))
+  (define specials-list
+    (map (curry apply make-special) special-sprites))
 
-(define (start-clicker pointer collectibles-list avoidables-list specials-list #:bg-sprite [bg-sprite (crop 0 0 640 480 FOREST-BG)])
+
   (apply precompile! (append collectibles-list
                                   avoidables-list
                                   specials-list
@@ -649,136 +657,29 @@
                              trees-list
                              bg-entity))))
 
-;start-clicker = pointer + collectibles (optional) + avoidables (optional) + specials (optional)
-(define-syntax start-clicker-forest
-  (syntax-rules ()
-    [(start-clicker-forest pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) (special-sprite ...))
-     (let ()
-       (define pointer
-         (app make-pointer pointer-sprite))
-       (define collectibles-list
-         (list (app make-collectible collectible-sprite ) ...))
-       (define avoidables-list
-         (list (app make-avoidable avoidable-sprite ) ...))
-       (define specials-list
-         (list (app make-special special-sprite ) ...))
-
-       (start-clicker pointer collectibles-list avoidables-list specials-list #:bg-sprite (crop 0 0 640 480 FOREST-BG))
-       )]
-    [(start-clicker-forest)                                         (start-clicker-forest a:question-icon () () ())]
-    [(start-clicker-forest pointer-sprite)                          (start-clicker-forest pointer-sprite () () ())]
-    [(start-clicker-forest pointer-sprite (collectible-sprite ...)) (start-clicker-forest pointer-sprite (collectible-sprite ...) () ())]
-    [(start-clicker-forest pointer-sprite (collectible-sprite ...)
-                           (avoidable-sprite ...)) (start-clicker-forest pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) ())]
-    ))
-
-(define-syntax start-clicker-desert
-  (syntax-rules ()
-    [(start-clicker-desert pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) (special-sprite ...))
-     (let ()
-       (define pointer
-         (app make-pointer pointer-sprite))
-       (define collectibles-list
-         (list (app make-collectible collectible-sprite ) ...))
-       (define avoidables-list
-         (list (app make-avoidable avoidable-sprite ) ...))
-       (define specials-list
-         (list (app make-special special-sprite ) ...))
-
-       (start-clicker pointer collectibles-list avoidables-list specials-list #:bg-sprite (crop 0 0 640 480 DESERT-BG))
-       )]
-    [(start-clicker-desert)                                         (start-clicker-desert a:question-icon () () ())]
-    [(start-clicker-desert pointer-sprite)                          (start-clicker-desert pointer-sprite () () ())]
-    [(start-clicker-desert pointer-sprite (collectible-sprite ...)) (start-clicker-desert pointer-sprite (collectible-sprite ...) () ())]
-    [(start-clicker-desert pointer-sprite (collectible-sprite ...)
-                           (avoidable-sprite ...)) (start-clicker-desert pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) ())]
-    ))
 
 
-(define-syntax start-clicker-snow
-  (syntax-rules ()
-    [(start-clicker-snow pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) (special-sprite ...))
-     (let ()
-       (define pointer
-         (app make-pointer pointer-sprite))
-       (define collectibles-list
-         (list (app make-collectible collectible-sprite ) ...))
-       (define avoidables-list
-         (list (app make-avoidable avoidable-sprite ) ...))
-       (define specials-list
-         (list (app make-special special-sprite ) ...))
-
-       (start-clicker pointer collectibles-list avoidables-list specials-list #:bg-sprite (crop 0 0 640 480 SNOW-BG))
-       )]
-    [(start-clicker-snow)                                         (start-clicker-snow a:question-icon () () ())]
-    [(start-clicker-snow pointer-sprite)                          (start-clicker-snow pointer-sprite () () ())]
-    [(start-clicker-snow pointer-sprite (collectible-sprite ...)) (start-clicker-snow pointer-sprite (collectible-sprite ...) () ())]
-    [(start-clicker-snow pointer-sprite (collectible-sprite ...)
-                           (avoidable-sprite ...)) (start-clicker-snow pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) ())]
-    ))
-
-(define-syntax start-clicker-lava
-  (syntax-rules ()
-    [(start-clicker-lava pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) (special-sprite ...))
-     (let ()
-       (define pointer
-         (app make-pointer pointer-sprite))
-       (define collectibles-list
-         (list (app make-collectible collectible-sprite ) ...))
-       (define avoidables-list
-         (list (app make-avoidable avoidable-sprite ) ...))
-       (define specials-list
-         (list (app make-special special-sprite ) ...))
-
-       (start-clicker pointer collectibles-list avoidables-list specials-list #:bg-sprite (crop 0 0 640 480 LAVA-BG))
-       )]
-    [(start-clicker-lava)                                         (start-clicker-lava a:question-icon () () ())]
-    [(start-clicker-lava pointer-sprite)                          (start-clicker-lava pointer-sprite () () ())]
-    [(start-clicker-lava pointer-sprite (collectible-sprite ...)) (start-clicker-lava pointer-sprite (collectible-sprite ...) () ())]
-    [(start-clicker-lava pointer-sprite (collectible-sprite ...)
-                           (avoidable-sprite ...)) (start-clicker-lava pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) ())]
-    ))
-
-(define-syntax start-clicker-pink
-  (syntax-rules ()
-    [(start-clicker-pink pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) (special-sprite ...))
-     (let ()
-       (define pointer
-         (app make-pointer pointer-sprite))
-       (define collectibles-list
-         (list (app make-collectible collectible-sprite ) ...))
-       (define avoidables-list
-         (list (app make-avoidable avoidable-sprite ) ...))
-       (define specials-list
-         (list (app make-special special-sprite ) ...))
-
-       (start-clicker pointer collectibles-list avoidables-list specials-list #:bg-sprite (crop 0 0 640 480 PINK-BG))
-       )]
-    [(start-clicker-pink)                                         (start-clicker-pink a:question-icon () () ())]
-    [(start-clicker-pink pointer-sprite)                          (start-clicker-pink pointer-sprite () () ())]
-    [(start-clicker-pink pointer-sprite (collectible-sprite ...)) (start-clicker-pink pointer-sprite (collectible-sprite ...) () ())]
-    [(start-clicker-pink pointer-sprite (collectible-sprite ...)
-                           (avoidable-sprite ...)) (start-clicker-pink pointer-sprite (collectible-sprite ...) (avoidable-sprite ...) ())]
-    ))
 
 
-#;
-(define-syntax-rule (start-clicker-pink pointer 
-                                        (collects ...)
-                                        (avoids ...)
-                                        (specials ...))
+
+(define-syntax-rule (define-clicker-start-f name bg)
   (begin
-    (bind-start-to start-clicker-pink-f) 
-    (start pointer 
-           (collects ...)
-           (avoids ...)
-           (specials ...))))
+    (define (name (pointer-sprite a:pointer)
+                  (collectible-sprites '()) 
+                  (avoidable-sprites '()) 
+                  (special-sprites '()))
+      (start-clicker pointer-sprite
+                     collectible-sprites
+                     avoidable-sprites
+                     special-sprites
+                     #:bg-sprite bg))))
 
-#;
+
+(define start-f (make-parameter #f))
+
 (define (bind-start-to f)
   (start-f f))
 
-#;
 (define-syntax (start stx)
   (syntax-parse stx
     [(start) #'((start-f)) ]
@@ -787,8 +688,32 @@
                   (list (listify things) ...)
                   ...)]))
 
+(define-syntax (listify stx)
+  (syntax-parse stx
+    [(_ (things ...)) 
+     #'(list things ...)]
+    [(_ thing)
+      #'(list thing)]))
 
+(define-syntax-rule (define-start-binder name bind-to-f)
+  (...
+    (define-syntax-rule (name stuff ...) 
+      (begin
+        (bind-start-to bind-to-f) 
+        (start stuff ...)))))
 
+(define-clicker-start-f start-clicker-pink-f (crop 0 0 640 480 PINK-BG)   )
+(define-start-binder start-pink start-clicker-pink-f)
 
+(define-clicker-start-f start-clicker-lava-f (crop 0 0 640 480 LAVA-BG)   )
+(define-start-binder start-lava start-clicker-lava-f)
 
+(define-clicker-start-f start-clicker-forest-f (crop 0 0 640 480 FOREST-BG)   )
+(define-start-binder start-forest start-clicker-forest-f)
+
+(define-clicker-start-f start-clicker-desert-f (crop 0 0 640 480 DESERT-BG))
+(define-start-binder start-desert start-clicker-desert-f)
+
+(define-clicker-start-f start-clicker-snow-f (crop 0 0 640 480 SNOW-BG))
+(define-start-binder start-snow start-clicker-snow-f)
 

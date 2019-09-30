@@ -9,11 +9,7 @@
          (all-from-out game-engine-demos-common)
          bg->play-icon
          rand
-         (rename-out [start-clicker-forest start-forest]
-                     [start-clicker-desert start-desert]
-                     [start-clicker-snow start-snow]
-                     [start-clicker-lava start-lava]
-                     [start-clicker-pink start-pink]))
+         (all-from-out "./clicker-lang.rkt"))
 
 (require "./assets.rkt"
          common-icons
