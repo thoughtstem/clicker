@@ -18,7 +18,6 @@
          (for-syntax racket)
          (prefix-in a: animal-assets)
          (prefix-in a: "./assets.rkt")
-         (only-in racket/gui make-font)
          (only-in lang/posn make-posn))
 
 (define (fast-sprite-equal? s1 s2)
@@ -415,6 +414,8 @@
                   ))
 
       ))
+
+  (define make-font (dynamic-require 'racket/gui 'make-font))
 
   ; ======= START OF SCORE CODE =========
   (define score-font (make-font #:size 13 #:face MONOSPACE-FONT-FACE #:family 'modern))

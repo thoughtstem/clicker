@@ -6,12 +6,13 @@
   (provide
     (all-from-out racket)
     (all-from-out clicker-lib)
-    (all-from-out animal-assets))
+    (all-from-out animal-assets)
+    )
 
   (require racket
            animal-assets
            clicker-lib
-           (only-in 2htdp/image overlay)
+           (only-in 2htdp/image overlay square)
            (only-in pict pict->bitmap))
 
   #:wrapper launch-game-engine
@@ -48,6 +49,11 @@
   [slow      s (draw-sprite slow)]
   [light     l (draw-sprite light)]
 
-  [rand     ? question-icon]  
+  [red            R (square 32 'solid 'red)]
+  [orange         O (square 32 'solid 'orange)]
+  [yellow         Y (square 32 'solid 'yellow)]
+  [green          G (square 32 'solid 'green)]
+  [blue           B (square 32 'solid 'blue)]
+  [purple         P (square 32 'solid 'purple)] 
 
-  )
+  [rand     ? question-icon])

@@ -5,10 +5,10 @@
          (all-from-out clicker-assets)
          (all-from-out animal-assets)
          (all-from-out color-strings)
-         (all-from-out game-engine)
-         (all-from-out game-engine-demos-common)
          bg->play-icon
          rand
+         (all-from-out game-engine)
+         (all-from-out game-engine-demos-common)
          (all-from-out "./clicker-lang.rkt"))
 
 (require "./assets.rkt"
