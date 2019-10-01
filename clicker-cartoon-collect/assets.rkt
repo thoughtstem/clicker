@@ -11,7 +11,7 @@
 
 (require (prefix-in c: cartoon-assets)
          (only-in game-engine sheet->sprite)
-         (only-in 2htdp/image scale))
+         (only-in 2htdp/image scale overlay/align flip-horizontal rectangle))
 
 (define red-eye
   (sheet->sprite
@@ -44,6 +44,15 @@
     c:frog-sheet))
 
 (define hammer
-  (scale 0.5 c:hammer))
+  ;Making c:hammer into a poiner
+  (overlay/align
+    "right" "bottom"
+    (flip-horizontal
+      (scale 0.5 c:hammer))
+    (rectangle 100 175 'solid 'transparent)))
 
 (define star c:star)
+
+
+
+
