@@ -14,7 +14,7 @@
 (define code-a-game "Code a game")
 
 (define (where-the-pointer-is something)
-  (english "where the clicker is" something))
+  (english "where the curser is a" something))
 
 (define (collecting something)
   (english "collecting" something))
@@ -26,8 +26,11 @@
   (english "special" something))
 
 (define (described thing)
+  (define (number->power-level n)
+    (~a "power-level-" n))
+
   (define (move-numbers-to-front l)
-    (append (filter number? l)
+    (append (map number->power-level (filter number? l))
             (filter-not number? l)))
 
 

@@ -34,8 +34,7 @@
                   SNOW-BG
                   LAVA-BG
                   PINK-BG)
-         "./clicker-lang.rkt"
-         )
+         "./clicker-lang.rkt")
 
 (define (bg->play-icon bg)
   (overlay play-outline-icon 

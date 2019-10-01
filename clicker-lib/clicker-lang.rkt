@@ -29,8 +29,13 @@
 ; Color a sprite by setting hue and saturation but not brightness
 ; UPDATE: Commenting out saturation for now.
 ;         Settting both sat and hue seems to result in scary red eyes.
-(define/contract (colorize-sprite color-name sprite)
-                 (-> (or/c string? symbol?) animated-sprite? animated-sprite?)
+(define/contract (colorize-sprite color-name sprite-maybe)
+                 (-> (or/c string? symbol?) (or/c animated-sprite? image?) animated-sprite?)
+
+                 (define sprite (if (image? sprite-maybe)
+                                  (new-sprite sprite-maybe)
+                                  sprite-maybe))
+
                  (define c-hsb (name->color-hsb color-name))
                  (define h (color-hsb-hue c-hsb))
                  ;(define s (color-hsb-sat c-hsb))
