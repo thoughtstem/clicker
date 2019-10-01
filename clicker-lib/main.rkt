@@ -44,5 +44,6 @@
             (crop 624 420 32 24 bg))))
 
 (define rand
-  (lambda () (first (shuffle (list cat dog horse rabbit
-                                   apple kiwi onion potato tomato)))))
+  (lambda () (first (shuffle 
+                      (list cat dog horse rabbit
+                            apple kiwi onion potato tomato)))))

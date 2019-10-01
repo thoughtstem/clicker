@@ -5,9 +5,9 @@
          start-snow
          start-lava
          start-pink
-         
+
          define-start
-         
+
          sprite->pointer-tree)
 
 (require game-engine
@@ -22,31 +22,34 @@
          (only-in lang/posn make-posn))
 
 (define (fast-sprite-equal? s1 s2)
-    (fast-equal? (current-fast-frame s1) (current-fast-frame s2)))
+  (and
+    (sprite? s1)
+    (sprite? s2)
+    (fast-equal? (current-fast-frame s1) (current-fast-frame s2))))
 
 ; Color a sprite by setting hue and saturation but not brightness
 ; UPDATE: Commenting out saturation for now.
 ;         Settting both sat and hue seems to result in scary red eyes.
 (define/contract (colorize-sprite color-name sprite)
-  (-> (or/c string? symbol?) animated-sprite? animated-sprite?)
-  (define c-hsb (name->color-hsb color-name))
-  (define h (color-hsb-hue c-hsb))
-  ;(define s (color-hsb-sat c-hsb))
-  (apply-image-function ;(compose (curry set-img-sat s)
-                        ;         (curry set-img-hue h))
-                        (curry set-img-hue h)
-                        sprite))
+                 (-> (or/c string? symbol?) animated-sprite? animated-sprite?)
+                 (define c-hsb (name->color-hsb color-name))
+                 (define h (color-hsb-hue c-hsb))
+                 ;(define s (color-hsb-sat c-hsb))
+                 (apply-image-function ;(compose (curry set-img-sat s)
+                   ;         (curry set-img-hue h))
+                   (curry set-img-hue h)
+                   sprite))
 
 (define (make-pointer sprite . options)
   (define color (findf (or/c string? symbol?) options))
   (define s (call-if-proc sprite))
   (sprite->entity (if color
-                      (colorize-sprite color s)
-                      s)
+                    (colorize-sprite color s)
+                    s)
                   #:name "pointer"
                   #:position (posn 0 0)
                   #:components (layer "ui")
-                               (on-rule mouse-in-game? go-to-mouse)))
+                  (on-rule mouse-in-game? go-to-mouse)))
 
 (define (random-success-toast)
   (toast-entity (first (shuffle (list "Awesome!"
@@ -63,23 +66,23 @@
                                       "Avoid those!"
                                       "Better luck next time!"))) #:color 'orangered))
 (define collect-broadcast
-    (sprite->entity empty-image
-                    #:name "Collect Broadcast"
-                    #:position (posn 0 0)
-                    #:components (on-start die)))
+  (sprite->entity empty-image
+                  #:name "Collect Broadcast"
+                  #:position (posn 0 0)
+                  #:components (on-start die)))
 
 (define avoid-broadcast
-    (sprite->entity empty-image
-                    #:name "Avoid Broadcast"
-                    #:position (posn 0 0)
-                    #:components (on-start die)))
+  (sprite->entity empty-image
+                  #:name "Avoid Broadcast"
+                  #:position (posn 0 0)
+                  #:components (on-start die)))
 
 (define (special-broadcast value)
-    (sprite->entity empty-image
-                    #:name "Special Broadcast"
-                    #:position (posn 0 0)
-                    #:components (storage "Value" value)
-                                 (on-start die)))
+  (sprite->entity empty-image
+                  #:name "Special Broadcast"
+                  #:position (posn 0 0)
+                  #:components (storage "Value" value)
+                  (on-start die)))
 
 (define (freeze-clicked? g e)
   (define special-broadcast (get-entity "Special Broadcast" g))
@@ -115,10 +118,10 @@
     (define stored-sprite (and (get-storage "stored-sprite" e)
                                (get-storage-data "stored-sprite" e)))
     (if stored-sprite
-        (~> e
-            (update-entity _ animated-sprite? stored-sprite)
-            (remove-storage "stored-sprite" _))
-        e)))
+      (~> e
+          (update-entity _ animated-sprite? stored-sprite)
+          (remove-storage "stored-sprite" _))
+      e)))
 
 (define (slow-entity)
   (lambda (g e)
@@ -132,35 +135,39 @@
     (define old-speed (and (get-storage "stored-speed" e)
                            (get-storage-data "stored-speed" e)))
     (if old-speed
-        (~> e
-            (update-entity _ speed? (speed old-speed))
-            (remove-storage "stored-speed" _))
-        e)))
+      (~> e
+          (update-entity _ speed? (speed old-speed))
+          (remove-storage "stored-speed" _))
+      e)))
 
-(define (make-collectible sprite . options)
+(define (make-collectible sprite-or-proc . options)
   (define speed (or (findf number? options)
                     2))
   (define color (findf (or/c string? symbol?) options))
-  (if (procedure? sprite)
-      (λ ()
-        (remove-component (create-npc #:sprite (if color
-                                                  (colorize-sprite color (sprite))
-                                                  (sprite))
-                                     #:name        "collectible"
-                                     #:position    (posn 0 0)
-                                     #:active-tile 0
-                                     #:dialog (dialog->sprites (list "Hello") #:game-width 640)
-                                     #:speed       speed
-                                     #:mode        'wander
-                                     #:components  (hidden)
-                                     (on-start (do-many (respawn 'anywhere)
-                                                        (random-direction)
-                                                        show))
-                                     (on-sprite-click (do-many (spawn (custom-particles))
-                                                               (spawn random-success-toast)
-                                                               (spawn collect-broadcast)
-                                                               (do-after-time 1 die)))
-                                     (observe-change freeze-clicked? (if/r freeze-clicked?
+
+  (define sprite
+    (if (procedure? sprite-or-proc)
+      (sprite-or-proc)
+      sprite-or-proc))
+
+  (remove-component (create-npc #:sprite (if color
+                                           (colorize-sprite color sprite)
+                                           sprite)
+                                #:name        "collectible"
+                                #:position    (posn 0 0)
+                                #:active-tile 0
+                                #:dialog (dialog->sprites (list "Hello") #:game-width 640)
+                                #:speed       speed
+                                #:mode        'wander
+                                #:components  (hidden)
+                                (on-start (do-many (respawn 'anywhere)
+                                                   (random-direction)
+                                                   show))
+                                (on-sprite-click (do-many (spawn (custom-particles))
+                                                          (spawn random-success-toast)
+                                                          (spawn collect-broadcast)
+                                                          (do-after-time 1 die)))
+                                (observe-change freeze-clicked? (if/r freeze-clicked?
                                                                       (do-many (freeze-entity)
                                                                                (freeze-sprite)
                                                                                (do-after-time 100 (do-many (un-freeze-entity)
@@ -170,47 +177,19 @@
                                                                              (freeze-sprite)
                                                                              (do-after-time 100 (do-many (un-slow-entity)
                                                                                                          (restore-sprite))))))
-                                     )
-                          physical-collider?))
-      (remove-component (create-npc #:sprite (if color
-                                                (colorize-sprite color sprite)
-                                                sprite)
-                                   #:name        "collectible"
-                                   #:position    (posn 0 0)
-                                   #:active-tile 0
-                                   #:dialog (dialog->sprites (list "Hello") #:game-width 640)
-                                   #:speed       speed
-                                   #:mode        'wander
-                                   #:components  (hidden)
-                                   (on-start (do-many (respawn 'anywhere)
-                                                      (random-direction)
-                                                      show))
-                                   (on-sprite-click (do-many (spawn (custom-particles))
-                                                             (spawn random-success-toast)
-                                                             (spawn collect-broadcast)
-                                                             (do-after-time 1 die)))
-                                   (observe-change freeze-clicked? (if/r freeze-clicked?
-                                                                      (do-many (freeze-entity)
-                                                                               (freeze-sprite)
-                                                                               (do-after-time 100 (do-many (un-freeze-entity)
-                                                                                                           (restore-sprite))))))
-                                (observe-change slow-clicked? (if/r slow-clicked?
-                                                                    (do-many (slow-entity)
-                                                                             (freeze-sprite)
-                                                                             (do-after-time 100 (do-many (un-slow-entity)
-                                                                                                         (restore-sprite))))))
-                                   )
-                        physical-collider?)))
+                                )
+                    physical-collider?)
+  )
 
 (define (make-avoidable sprite . options)
   (define speed (or (findf number? options)
                     2))
   (define color (findf (or/c string? symbol?) options))
   (if (procedure? sprite)
-      (λ ()
-        (remove-component (create-npc #:sprite (if color
-                                                  (colorize-sprite color (sprite))
-                                                  (sprite))
+    (λ ()
+       (remove-component (create-npc #:sprite (if color
+                                                (colorize-sprite color (sprite))
+                                                (sprite))
                                      #:name "avoidable"
                                      #:position (posn 0 0)
                                      #:active-tile 0
@@ -226,48 +205,48 @@
                                                                (spawn avoid-broadcast)
                                                                (do-after-time 1 die)))
                                      (observe-change freeze-clicked? (if/r freeze-clicked?
-                                                                      (do-many (freeze-entity)
-                                                                               (freeze-sprite)
-                                                                               (do-after-time 100 (do-many (un-freeze-entity)
-                                                                                                           (restore-sprite))))))
-                                (observe-change slow-clicked? (if/r slow-clicked?
-                                                                    (do-many (slow-entity)
-                                                                             (freeze-sprite)
-                                                                             (do-after-time 100 (do-many (un-slow-entity)
-                                                                                                         (restore-sprite))))))
+                                                                           (do-many (freeze-entity)
+                                                                                    (freeze-sprite)
+                                                                                    (do-after-time 100 (do-many (un-freeze-entity)
+                                                                                                                (restore-sprite))))))
+                                     (observe-change slow-clicked? (if/r slow-clicked?
+                                                                         (do-many (slow-entity)
+                                                                                  (freeze-sprite)
+                                                                                  (do-after-time 100 (do-many (un-slow-entity)
+                                                                                                              (restore-sprite))))))
                                      (after-time 200 die)
                                      )
-                          physical-collider?))
-      (remove-component (create-npc #:sprite (if color
-                                                (colorize-sprite color sprite)
-                                                sprite)
-                                   #:name "avoidable"
-                                   #:position (posn 0 0)
-                                   #:active-tile 0
-                                   #:dialog      (dialog->sprites (list "Hello") #:game-width 640)
-                                   #:speed speed
-                                   #:mode 'follow
-                                   #:target "pointer"
-                                   #:components (hidden)
-                                   (on-start (do-many (respawn 'anywhere)
-                                                      (random-direction)
-                                                      show))
-                                   (on-sprite-click (do-many (spawn random-failure-toast)
-                                                             (spawn avoid-broadcast)
-                                                             (do-after-time 1 die)))
-                                   (observe-change freeze-clicked? (if/r freeze-clicked?
-                                                                      (do-many (freeze-entity)
+                         physical-collider?))
+    (remove-component (create-npc #:sprite (if color
+                                             (colorize-sprite color sprite)
+                                             sprite)
+                                  #:name "avoidable"
+                                  #:position (posn 0 0)
+                                  #:active-tile 0
+                                  #:dialog      (dialog->sprites (list "Hello") #:game-width 640)
+                                  #:speed speed
+                                  #:mode 'follow
+                                  #:target "pointer"
+                                  #:components (hidden)
+                                  (on-start (do-many (respawn 'anywhere)
+                                                     (random-direction)
+                                                     show))
+                                  (on-sprite-click (do-many (spawn random-failure-toast)
+                                                            (spawn avoid-broadcast)
+                                                            (do-after-time 1 die)))
+                                  (observe-change freeze-clicked? (if/r freeze-clicked?
+                                                                        (do-many (freeze-entity)
+                                                                                 (freeze-sprite)
+                                                                                 (do-after-time 100 (do-many (un-freeze-entity)
+                                                                                                             (restore-sprite))))))
+                                  (observe-change slow-clicked? (if/r slow-clicked?
+                                                                      (do-many (slow-entity)
                                                                                (freeze-sprite)
-                                                                               (do-after-time 100 (do-many (un-freeze-entity)
+                                                                               (do-after-time 100 (do-many (un-slow-entity)
                                                                                                            (restore-sprite))))))
-                                (observe-change slow-clicked? (if/r slow-clicked?
-                                                                    (do-many (slow-entity)
-                                                                             (freeze-sprite)
-                                                                             (do-after-time 100 (do-many (un-slow-entity)
-                                                                                                         (restore-sprite))))))
-                                   (after-time 200 die)
-                                   )
-                        physical-collider?)))
+                                  (after-time 200 die)
+                                  )
+                      physical-collider?)))
 
 (define (make-special sprite . options)
   (define value (cond [(fast-sprite-equal? sprite a:freeze) "freeze"]
@@ -278,15 +257,15 @@
                                 100)]))
   (define color (findf (or/c string? symbol?) options))
   (if (procedure? sprite)
-      (λ ()
-        (sprite->entity (if color
-                            (colorize-sprite color (sprite))
-                            (sprite))
+    (λ ()
+       (sprite->entity (if color
+                         (colorize-sprite color (sprite))
+                         (sprite))
                        #:name "special"
                        #:position (posn 0 0)
                        #:components (hidden)
                        (on-start (do-many (respawn 'anywhere)
-                                     show))
+                                          show))
                        (on-sprite-click (apply do-many
                                                (filter identity
                                                        (flatten (list (spawn (toast-entity (cond [(eq? value "freeze") "==== FREEZE ===="]
@@ -298,77 +277,83 @@
                                                                       (spawn (special-broadcast value))
                                                                       #|(if (eq? value "chest")
                                                                           (list
-                                                                           (spawn (~> (random-special)
-                                                                                      (remove-components _ (or/c on-start? hidden?))
-                                                                                      (update-entity _ posn? (posn (random -40 40)
-                                                                                                                   (random -40 40)))))
-                                                                           (spawn (~> (random-special)
-                                                                                      (remove-components _ (or/c on-start? hidden?))
-                                                                                      (update-entity _ posn? (posn (random -40 40)
-                                                                                                                   (random -40 40)))))
-                                                                           (spawn (~> (random-special)
-                                                                                      (remove-components _ (or/c on-start? hidden?))
-                                                                                      (update-entity _ posn? (posn (random -40 40)
-                                                                                                                   (random -40 40)))))
-                                                                           )
+                                                                            (spawn (~> (random-special)
+                                                                                       (remove-components _ (or/c on-start? hidden?))
+                                                                                       (update-entity _ posn? (posn (random -40 40)
+                                                                                                                    (random -40 40)))))
+                                                                            (spawn (~> (random-special)
+                                                                                       (remove-components _ (or/c on-start? hidden?))
+                                                                                       (update-entity _ posn? (posn (random -40 40)
+                                                                                                                    (random -40 40)))))
+                                                                            (spawn (~> (random-special)
+                                                                                       (remove-components _ (or/c on-start? hidden?))
+                                                                                       (update-entity _ posn? (posn (random -40 40)
+                                                                                                                    (random -40 40)))))
+                                                                            )
                                                                           #f)|#
                                                                       (do-after-time 1 die))))))
                        (after-time 200 die)
                        ))
-      (sprite->entity (if color
-                          (colorize-sprite color sprite)
-                          sprite)
-                      #:name "special"
-                  #:position (posn 0 0)
-                  #:components (hidden)
-                  (on-start (do-many (respawn 'anywhere)
-                                     show))
-                  (on-sprite-click (apply do-many
-                                          (filter identity
-                                                  (flatten (list (spawn (toast-entity (cond [(eq? value "freeze") "==== FREEZE ===="]
-                                                                                            [(eq? value "slow")   "==== SLOW ===="]
-                                                                                            [(eq? value "chest")  "==== LOOT ===="]
-                                                                                            [(eq? value "light")  "==== LIGHT ===="]
-                                                                                            [else                 (~a "+" value " POINTS!")])
-                                                                                      #:color 'green))
-                                                                 (spawn (special-broadcast value))
-                                                                 #|(if (eq? value "chest")
-                                                                     (list
-                                                                      (spawn (~> (random-special)
-                                                                                 (remove-components _ (or/c on-start? hidden?))
-                                                                                 (update-entity _ posn? (posn (random -40 40)
-                                                                                                              (random -40 40)))))
-                                                                      (spawn (~> (random-special)
-                                                                                 (remove-components _ (or/c on-start? hidden?))
-                                                                                 (update-entity _ posn? (posn (random -40 40)
-                                                                                                              (random -40 40)))))
-                                                                      (spawn (~> (random-special)
-                                                                                 (remove-components _ (or/c on-start? hidden?))
-                                                                                 (update-entity _ posn? (posn (random -40 40)
-                                                                                                              (random -40 40)))))
-                                                                      )
-                                                                     #f)|#
-                                                                 (do-after-time 1 die))))))
-                  (after-time 200 die)
-                  )))
-                 
+    (sprite->entity (if color
+                      (colorize-sprite color sprite)
+                      sprite)
+                    #:name "special"
+                    #:position (posn 0 0)
+                    #:components (hidden)
+                    (on-start (do-many (respawn 'anywhere)
+                                       show))
+                    (on-sprite-click (apply do-many
+                                            (filter identity
+                                                    (flatten (list (spawn (toast-entity (cond [(eq? value "freeze") "==== FREEZE ===="]
+                                                                                              [(eq? value "slow")   "==== SLOW ===="]
+                                                                                              [(eq? value "chest")  "==== LOOT ===="]
+                                                                                              [(eq? value "light")  "==== LIGHT ===="]
+                                                                                              [else                 (~a "+" value " POINTS!")])
+                                                                                        #:color 'green))
+                                                                   (spawn (special-broadcast value))
+                                                                   #|(if (eq? value "chest")
+                                                                       (list
+                                                                         (spawn (~> (random-special)
+                                                                                    (remove-components _ (or/c on-start? hidden?))
+                                                                                    (update-entity _ posn? (posn (random -40 40)
+                                                                                                                 (random -40 40)))))
+                                                                         (spawn (~> (random-special)
+                                                                                    (remove-components _ (or/c on-start? hidden?))
+                                                                                    (update-entity _ posn? (posn (random -40 40)
+                                                                                                                 (random -40 40)))))
+                                                                         (spawn (~> (random-special)
+                                                                                    (remove-components _ (or/c on-start? hidden?))
+                                                                                    (update-entity _ posn? (posn (random -40 40)
+                                                                                                                 (random -40 40)))))
+                                                                         )
+                                                                       #f)|#
+                                                                   (do-after-time 1 die))))))
+                    (after-time 200 die)
+                    )))
+
 (define (call-if-proc p)
   (if (procedure? p)
-      (p)
-      p))
+    (p)
+    p))
 
 (define (start-clicker pointer-sprite collectible-sprites avoidable-sprites special-sprites 
                        #:bg-sprite     [bg-sprite (crop 0 0 640 480 FOREST-BG)]
                        #:world-objects [world-objects '()] )
 
   (define pointer
-    (apply make-pointer (flatten pointer-sprite)))
+    (call-if-proc (apply make-pointer (flatten pointer-sprite))))
   (define collectibles-list
-    (map (curry apply make-collectible) collectible-sprites ))
+    (map 
+      (compose call-if-proc (curry apply make-collectible)) 
+      collectible-sprites ))
   (define avoidables-list
-    (map (curry apply make-avoidable) avoidable-sprites))
+    (map 
+      (compose call-if-proc (curry apply make-avoidable)) 
+      avoidable-sprites))
   (define specials-list
-    (map (curry apply make-special) special-sprites))
+    (map 
+      (compose call-if-proc (curry apply make-special)) 
+      special-sprites))
 
 
   (apply precompile! (append collectibles-list
